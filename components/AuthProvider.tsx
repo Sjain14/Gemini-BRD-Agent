@@ -25,8 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isUniversalDevMode = process.env.NEXT_PUBLIC_UNIVERSAL_DEV_MODE === 'true';
+  const isLocalDev = process.env.NODE_ENV === 'development';
+  const shouldBypassAuth = isUniversalDevMode || isLocalDev;
+
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (shouldBypassAuth) {
       setUser({
         uid: 'test-user-123',
         email: 'test@nexusbrd.local',
@@ -42,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [shouldBypassAuth]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
