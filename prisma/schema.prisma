@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id           String    @id @default(uuid())
+  name         String
+  domain       String?   @unique
+  billingPlan  String    @default("pro")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  users        User[]
+  projects     Project[]
+}
+
+model User {
+  id             String        @id @default(uuid())
+  organizationId String
+  email          String        @unique
+  fullName       String
+  avatarUrl      String?
+  role           String        @default("editor") // "superadmin", "org_admin", "editor", "viewer"
+  isActive       Boolean       @default(true)
+  lastLogin      DateTime?
+  createdAt      DateTime      @default(now())
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects       Project[]     @relation("ProjectCreator")
+  dataSources    DataSource[]  @relation("DataSourceUploader")
+  generatedBrds  GeneratedBrd[] @relation("BrdGenerator")
+}
+
+model Project {
+  id             String         @id @default(uuid())
+  organizationId String
+  createdBy      String
+  name           String
+  description    String?
+  status         String         @default("active")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator        User           @relation("ProjectCreator", fields: [createdBy], references: [id])
+  dataSources    DataSource[]
+  generatedBrds  GeneratedBrd[]
+}
+
+model DataSource {
+  id             String    @id @default(uuid())
+  projectId      String
+  uploadedBy     String
+  fileName       String
+  fileType       String    // "audio", "image", "pdf", "text"
+  storageUrl     String
+  fileSizeBytes  Int
+  status         String    @default("uploaded") // "uploaded", "processing", "vectorized", "failed"
+  createdAt      DateTime  @default(now())
+
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader       User      @relation("DataSourceUploader", fields: [uploadedBy], references: [id])
+}
+
+model AiModel {
+  id                  String         @id @default(uuid())
+  name                String
+  provider            String         // "google-vertex", "openai"
+  version             String
+  contextWindow       Int
+  isActive            Boolean        @default(true)
+  baseCostPer1kTokens Float?
+
+  generatedBrds       GeneratedBrd[]
+}
+
+model GeneratedBrd {
+  id              String   @id @default(uuid())
+  projectId       String
+  generatedBy     String
+  modelUsedId     String?
+  versionNumber   Int      @default(1)
+  markdownContent String
+  createdAt       DateTime @default(now())
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generator       User     @relation("BrdGenerator", fields: [generatedBy], references: [id])
+  model           AiModel? @relation(fields: [modelUsedId], references: [id])
+}

@@ -1,0 +1,6 @@
+{
+  "name": "NexusBRD Dashboard",
+  "description": "Multi-Modal Requirements Agent for generating BRDs from uploaded audio, UI sketches, and text notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
